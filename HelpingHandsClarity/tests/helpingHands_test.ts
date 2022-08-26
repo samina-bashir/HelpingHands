@@ -348,34 +348,30 @@ Clarinet.test({
 });
 
 Clarinet.test({
-    name: "Ensure that stx can be donated against listed need",
+    name: "Ensure that stx cannot be donated against listed need if donor has not enough balance",
     async fn(chain: Chain, accounts: Map<string, Account>) {
         const wallet1=accounts.get("wallet_1")!;
         const deployer=accounts.get("deployer")!;
         let block = chain.mineBlock([
             Tx.contractCall("helpingHands","list-needer",[
                 types.principal(wallet1.address),
-                types.uint(20000),
+                types.uint(200),
                 types.utf8("I need money for ... .Here is the link to the proofs: ..."),
                 types.some(types.ascii("email: abc@xyz.com Phone: +000 0000000"))
             ],
                 wallet1.address),
 
-            Tx.contractCall("helpingHands","donate-stx",[types.uint(0),types.uint(50)], deployer.address)
+            Tx.contractCall("helpingHands","donate-stx",[types.uint(0),types.uint(100)], deployer.address)
         ]);
         assertEquals(block.receipts.length, 2);
         assertEquals(block.height, 2); 
      
         block.receipts[0].result.expectOk().expectUint(0);
-        block.receipts[1].result.expectOk().expectBool(true);
-        block.receipts[1].events.expectSTXTransferEvent(50,deployer.address,wallet1.address);
+        block.receipts[1].result.expectErr().expectUint(1);
         let listing = chain.callReadOnlyFn("helpingHands","get-listing-at",[types.uint(0)],deployer.address);
         const listingTuple=listing.result.expectOk().expectSome().expectTuple();
         assertEquals(listingTuple.needer,wallet1.address);
-        assertEquals(listingTuple.amountNeeded,types.uint(20000));
-        assertEquals(listingTuple.description,types.utf8("I need money for ... .Here is the link to the proofs: ..."));
-        assertEquals(listingTuple.contactInfo,types.some((types.ascii("email: abc@xyz.com Phone: +000 0000000"))));
-        assertEquals(listingTuple.amountCollected,types.uint(50));
+        assertEquals(listingTuple.amountCollected,types.uint(0));
     },
 });
 

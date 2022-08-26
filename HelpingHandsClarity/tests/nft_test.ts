@@ -7,7 +7,6 @@ Clarinet.test({
     async fn(chain: Chain, accounts: Map<string, Account>) {
 
         const deployer = accounts.get("deployer")!;
-        const wallet2 = accounts.get("wallet_1")!;
 
         let block = chain.mineBlock([
            
@@ -19,8 +18,7 @@ Clarinet.test({
         assertEquals(block.height, 2);
         
         block.receipts[0].result.expectOk().expectUint(0);
-
-        
+ 
         block.receipts[0].events.expectNonFungibleTokenMintEvent(types.uint(0), deployer.address, 
         `${deployer.address}.nft`, "NFT")
 
@@ -203,5 +201,6 @@ Clarinet.test({
         `${deployer.address}.nft`, "NFT")
 
         let count = chain.callReadOnlyFn("nft","get-last-token-id",[],deployer.address);
+        count.result.expectOk().expectUint(3);
     },
 });
